@@ -1,0 +1,48 @@
+---
+title: "Geolocation analysis with Open Source Tools"
+output: 
+ html_document:
+    code_folding: show
+    theme: "journal"
+    toc: true
+    toc_float: true
+    fig.legend: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r fig.align='center', echo=FALSE, size = "tiny"}
+knitr::include_graphics('images/front.png', dpi = NA)
+```
+
+This manual is part of the following publication and has been written by the same group of authors:
+
+**Simeon Lisovski, Martins Briedis, Kiran Danjahl-Adams, Lykke Pedersen, Sarah Davidson, ..., Michael T. Hallworth, Michael Sumner, Simon Wotherspoon, Eli Bridge (201X) The Nuts and Bolts of Light-Level Geolocation Analyses. Journal X:xxx-xxx.**
+
+
+# Preface
+
+Geolocation by light is a method of animal tracking that uses small, light-detecting data loggers (i.e. geolocators) to determine the locations of animals based on the light environment they move through. Technological and fieldwork issues aside, effective use of light level geolocation requires translation of a time series of light levels into geographical locations. Geographical locations derived from light-level data are subject to error that derives directly from noise in the light-level data, i.e. unpredictable shading of the light sensor due to weather or the habitat [@Lisovski2012]. Although light-level geolocation has provided a wealth of new insights into the annual movements of hundreds of bird species, researchers invariably struggle with the analytical steps needed to obtain location estimates, interpret them, present their results, and document what they have done.
+
+This manual has been written by some of the leading experts in geolocator analysis and is based on material created for several international training workshops. It offers code and experience that we have accumulated over the last decade, and we hope that this collection of analysis using different open source software tools (R packages) helps both, newcomers and experienced users of light-level geolocation.
+
+
+## Acknowledgements
+
+We want to acknowledge all people that have been involved in the development of geolocator tools as well as all participants of the many international geolocator workshops. Special thanks goes to .... Furthermore, we like to acknowledge Steffen Hahn and Felix Liechti to organise a first workshop of the analysis of geolocator data from songbirds back in 2011. This workshop has been financially supported by the Swiss Ornithological Institute and the Swiss National Science Foundation. The National Centre for Ecological Analysis and Synthesis (NCEAS) has supported two meetings with experts in geolocator analysis in 2012 ans 2013 and many of the tools that are discussed in this manual were kick started at these meetings. We want to thank James Fox from Migrate Technology Ltd. as well as the US National Science Foundation for contiouing financial support to develop tools and organise workshops.
+
+```{r fig.align='center', echo=FALSE}
+knitr::include_graphics('images/Ackn.jpg', dpi = NA)
+```
+
+```{r child = '01-Manual.Rmd'}
+```
+
+```{r child = '02-GettingStarted.Rmd'}
+```
+
+```{r child = '03-LoadingData.Rmd'}
+```
+
+```{r child = '04-TwilightAnnotation.Rmd'}
+```
