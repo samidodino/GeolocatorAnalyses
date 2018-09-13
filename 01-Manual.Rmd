@@ -1,6 +1,6 @@
 # Structure of the manual {#structure}
 
-This manual should allow users with very limited knowledge in R coding to perform a state-of-the-art analysis of geolocator data. Thus, we start with the very basics of loading packges \@ref(start) and data \@ref(loadingData) and go into more detail along the way. Starting with the initial data editing steps, which we call twilight annotation \@ref(twilight), we provide instructions on how to use several prominent analysis packages, illustrate the general analysis workflow using example data, and provide some recommendations for how to visualize and present your results. We do not cover every available analysis package but focus on what we percieve to be the most freuqently used tools, which are GeoLight \@ref(GeoLight), probGLS \@ref(probGLS), SGAT \@ref(SGAT) and FLightR \@ref(FLightR). Finally, the manual concludes with a recommendation for using Movebank as a data repository for geolocator tracks \@ref(movebank).
+This manual should allow users with very limited knowledge in R coding to perform a state-of-the-art analysis of geolocator data. Thus, we start with the very basics of [loading packages]{#start} and [data]{#loadingData} and go into more detail along the way. Starting with the initial data editing steps, which we call twilight annotation [twilight annotation](#twilight), we provide instructions on how to use several prominent analysis packages, illustrate the general analysis workflow using example data, and provide some recommendations for how to visualize and present your results. We do not cover every available analysis package but focus on what we percieve to be the most freuqently used tools, which are GeoLight [GeoLight](#GeoLight), [probGLS](#probGLS), SGAT \@ref(SGAT) and [FLightR](#FLightR). Finally, the manual concludes with a recommendation for using Movebank as a data repository for geolocator tracks [Movebank](#movebank).
 
 ## Reproducing the analyses {-}
 
@@ -27,7 +27,7 @@ You can download the _Data_ folder with the raw data as well as the annotaded tw
 ## The datasets {-}
 
 To illustrate the capabilities of the different packages, discuss the potential pitfalls and provide some recommendations, we will use raw geolocator data from three individuals of different species.
-The data is publised on Movebank \@ref{movebank} and can be downloaded directly using the R package _move_ (to be done and to be tested!).
+The data is publised on [Movebank]{#movebank} and can be downloaded directly using the R package _move_ (to be done and to be tested!).
 
 TagID   |  Species           |   Tag type                            | Movebank information
 ------  | ---------          | -----------------------------------   | ---------------------

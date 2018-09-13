@@ -1,6 +1,66 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
 # SGAT {#SGAT}
 
-... some general notes ...
+## Model description
+
+The package _SGAT_ (TAGS backwards) is based in the principles that haven been developed for the _tripEstimation_ package that has now been deprecated by _SGAT_. The biggest difference between these two packages is the possibility to use twilight events to run the mode. _tripEstimation_ was based solely on the curve method. However, _SGAT_ has additional capabilites that we will discuss in the workflow below. Here, we highlight the \code{groupModel}, and the \code{twiligthFree} model as recent developments with great potential.
+
+In general, _SGAT_ implements two models - \textbf{Estelle} and \textbf{Stella}. Both models can be setup using threshold based twiligth events or twiligth period (_curve method_), but impose different constraints on the movement of the tag.  Stella estimates the locations $x_{1},x_{2},\ldots,x_{n}$ of the tag at the observed times of twilight $t_{1},t_{2},\ldots,t_{n}$ assuming the great circle distance between any two successive locations $x_{i}$ and $x_{i+1}$ follows a given distribution.  Estelle also considers intermediate locations $z_{1},z_{2},\ldots,z_{n-1}$, where $z_{i}$ is the location of the tag at an arbitrary time $\tau_{i}$ between twilights $t_{i} < \tau_{i} t_{i+1}$, and assumes the great circle distance along any dog-leg path $x_{i},z_{i},x_{i+1}$ follows a given distribution.
+
+Both models estimate location based on observed times of twilight. More precisely, let $t=(t_{1},t_{2},\ldots,t_{n})$ denote the observed times of twilight, let $x=(x_{1},x_{2},\ldots,x_{n})$ denote the corresponding locations of the tag at these times, and let $r=(r_{1},r_{2},\ldots,r_{n})$ be indicators of whether each twilight is a sunrise or sunset. Let $\hat{t}_{i}(x)$ denote the true time at which the twilight corresponding to $t_{i}$ occurs at location $x$.
+
+Both models assume that
+
+$$t_{i} \sim F(\hat{t}_{i}(x_{i}); r_{i},\alpha)$$
+
+for some known distribution $F$ dependent upon a vector of (known) parameters $\alpha$.
+
+The two models differ in the way they represent the motion of the tag between successive twilights.
+
+Let $d = (d_{1},d_{2},\ldots,d_{n-1}) = D(x)$ denote the vector of great circle distances $d_{i}$ between successive locations
+$x_{i}$ and $x_{i+1}$.  Stella assumes the joint distribution of these distances is
+
+$$d \sim G(\beta)$$
+
+for some known distribution $G$ dependent upon a vector of (known) parameters $\beta$.  This package implements a less general form of model in which it is assumed the $d_{i}$ are independently distributed
+
+$$d_{i} \sim G_{i}(\beta).$$
+
+Together, the twilight and behavioural models define the likelihood for the model.  If $p(x_{i})$ denote independent priors for the locations then the posterior distribution for $x$ under the Stella model can be written
+
+$$
+  p( x \;|\; t,r,\alpha,\beta) \propto
+  \left (
+    \prod_{i=1}^{n} f(t_{i}\;|\; \hat{t}_{i}(x_{i}),r_{i},\alpha)
+  \right )
+  \times g(D(x)|\beta)
+  \times
+  \left(
+    \prod_{i=1}^{n} p(x_{i}).
+  \right )
+$$
+
+Similarly, if $p(z_{i})$ denote independent priors for the intermediate points $z_{i}$, then the posterior under the Estelle model can be written
+
+$$
+  p( x,z \;|\; t,r,\alpha,\beta) \propto
+  \left (
+    \prod_{i=1}^{n} f(t_{i}\;|\; \hat{t}_{i}(x_{i}),r_{i},\alpha)
+  \right )
+  \times g(D(x,z)|\beta)
+  \times
+  \left (
+    \prod_{i=1}^{n} p(x_{i}) \right ) \times \left( \prod_{i=1}^{n-1} p(z_{i})
+  \right ).
+$$
+
+In both cases a sequence of samples from the posterior can be drawn by standard MCMC techniques.
+
+## Implementation
 
 To illustrate the _SGAT_ analysis, we use the European bee-eater dataset. The light intensities were recorded by a geolocator from the Swiss Ornithological Insitute, measuring light every xx minutes writing the mean of every xx measurements.
 
@@ -30,7 +90,7 @@ raw <- subset(raw, Date>=min(twl$Twilight) & Date<=max(twl$Twilight)) # clipping
 
 We can have a look into the data using the `lightImage` function from the `TwGeos` package:
 
-```{r}
+```{r, warnings = FALSE}
 offset <- 12 # adjusts the y-axis to put night (dark shades) in the middle
 
 lightImage( tagdata = raw,
@@ -54,7 +114,7 @@ twl <- twilightEdit(twilights = twl,
 
 >> It's usually best to do this step manually. See the [Twilight annotation](#TwilightAnnotation) page for more information.
 
-## Calibration (SGAT)
+### Calibration (SGAT)
 
 See general introduction and discusssion on calibration: \@ref{calibration}.
 
@@ -96,19 +156,15 @@ zenith0 <- calib[2]
 alpha <- calib[3:4]
 ```
 
->> Don't forget to store this information for later
-
-
 ### Alternative - Hill-Ekstrom Calibration
-
 
 For the bee eaters and many other species, the breeding season is often also when the loggers are delpoyed, but is a very special period because the birds use different habitats and show different behaviors compared to the rest of the annual cycle. For instance, bee eaters use burrows during the breeding season, but not during the rest of the year. This is of course suboptimal for calibration since it would lead to good estimates for the breeding grounds when we know the exact location, and biased estimates of sunrise and sunset for the rest of the year. We can therefore try and estimate an alternative zenith angle based in the Hill-Ekstrom theory that the rigth zenith anlge should lead to the lowest variance in latitude estimates (i.e. flattest) during stationary periods. And the latter is most pronounced around the equinox. The following bits of code draw a basic path and then compare different zeniths to find the one with the lowest variation. It then uses that new zenith with the least sd in the threshold model.
 
 In the `findHEZenith`function, the `tol` argument defines how many locations should be linearly interpolated around the equinox. Large values lead to larger periods with interpolated values. For this type of calibration it makes sense to play with this value but in general it is recommended to set it to a low value (e.g. 0.08). If the tracked individual has been stationary during the time of the equinox this period provides the best data for the Hill-Ekstrom calibration.
 
 ```{r, fig.width=6, fig.height=8}
-startDate = "2015-12-12"
-endDate = "2016-04-15"
+startDate <- "2015-12-12"
+endDate   <- "2016-04-15"
   
 start = min(which(as.Date(twl$Twilight) == startDate))
 end = max(which(as.Date(twl$Twilight) == endDate))
@@ -118,7 +174,7 @@ end = max(which(as.Date(twl$Twilight) == endDate))
 
 The top panel shows the entire path (latitude) using different zenith angles with the black line indicating the latiude estimates with the smallest variation within the specified range (in between the two blue dashed lines). One needs to be quite sure that the individual did not move during this period. The lower pane shows the actual variation in latitudes across a range of zenith angles. It is good if one can see a clear minimum in this curve.
 
->> play around with the range. For instance look what happens when the `endDate` is changed to "2016-01-15". This is not what you want - there is no clear u-shape in the bottom panel and the latitude during stationary non-breeding period in the top panel is very curved, not flat. In such cases, it's important to increase the range to cover some of the equinox period which is the most noisy. In some cases it can even be worth using the `mergeSites` function from the `GeoLight` package to find stationary sites to use in the Hill-Ekstrom calibration. Here's an example below of how this can be done.
+> play around with the range. For instance look what happens when the `endDate` is changed to "2016-01-15". This is not what you want - there is no clear u-shape in the bottom panel and the latitude during stationary non-breeding period in the top panel is very curved, not flat. In such cases, it's important to increase the range to cover some of the equinox period which is the most noisy. In some cases it can even be worth using the `mergeSites` function from the `GeoLight` package to find stationary sites to use in the Hill-Ekstrom calibration. Here's an example below of how this can be done.
 
 
 ```{r, fig.width=6, fig.height=8, warning=FALSE, message=FALSE}
@@ -131,16 +187,15 @@ cL <- changeLight(twl=geo_twl, quantile=0.8, summary = F, days = 10, plot = T)
 mS <- mergeSites(twl = geo_twl, site = cL$site, degElevation = 90-zenith0, distThreshold = 500)
 
 #specifiy which site is the stationary one
-site=mS$site[mS$site>0] # get rid of movement periods
-stationarySite = which(table(site) == max(table(site))) # find the site where bird is the longest
+site           <- mS$site[mS$site>0] # get rid of movement periods
+stationarySite <- which(table(site) == max(table(site))) # find the site where bird is the longest
 
 #find the dates that the bird arrives and leaves this stationary site
-start = min(which(mS$site == stationarySite))
-end = max(which(mS$site == stationarySite))
+start <- min(which(mS$site == stationarySite))
+end   <- max(which(mS$site == stationarySite))
 
 (zenith_sd <- findHEZenith(twl, tol=0.01, range=c(start,end)))
 ```
-
 
 In this case, there is no real difference between the two calibrations. If a difference will be detected (>0.5 degrees), one should consider adjusting the zenith angles calculated from the breeding site.
 
@@ -150,7 +205,7 @@ zenith0 <- zenith_sd
 ```
 
 
-## Movement Model
+### Movement Model
 
 We also have to generate some parameters for a basic movement model. We need to provide a mean and standard deviation for a gamma distribution of flight speeds that get applied to each day of the analysis period. We typically want short (near zero) distance flights to be common and long distance flights to be relatively rare. So both mean and distribution should be small.
 
@@ -160,9 +215,9 @@ matplot(0:100, dgamma(0:100, beta[1], beta[2]),
         type = "l", col = "orange",lty = 1,lwd = 2,ylab = "Density", xlab = "km/h")
 ```
 
->> if you have a species which moves very slowly, you can have `beta = c(1,0.08)` whereas if you have a species which does moves quickly e.g. bar-tailed godwit, a larger distribution e.g. `beta = c(2.2,0.06)` might be more appropriate. Note that having a broader distribution is always better as it does not restrict the species movements. The best is to start large and then move to something narrower if the end model doesn't fit the data
+> if you have a species which moves very slowly, you can have `beta = c(1,0.08)` whereas if you have a species which does moves quickly e.g. bar-tailed godwit, a larger distribution e.g. `beta = c(2.2,0.06)` might be more appropriate. Note that having a broader distribution is always better as it does not restrict the species movements. The best is to start large and then move to something narrower if the end model doesn't fit the data
 
-## Initial path
+### Initial path
 
 Now we need to get an initial path for the MCMC simulation as well as the midpoints between each consequtive location estimate.
 
@@ -180,11 +235,10 @@ points(lon.calib, lat.calib, pch = 16, cex = 2.5, col = "firebrick")
 box()
 ```
 
+> play around with `tol`. You'll notice that with e.g. `tol=0.18` you start getting straight lines. This is because tol is used to interpolate over the equinox period. A smaller tol is always better as it reduces interpolation. For an anaylsis, always start with a low tol and only increase if the model cannot deal with the noise in the data (creates impossible solutions which do not allow convergence - for instance having a bird)
 
->> play around with `tol`. You'll notice that with e.g. `tol=0.18` you start getting straight lines. This is because tol is used to interpolate over the equinox period. A smaller tol is always better as it reduces interpolation. For an anaylsis, always start with a low tol and only increase if the model cannot deal with the noise in the data (creates impossible solutions which do not allow convergence - for instance having a bird)
 
-
-## Define known locations
+### Define known locations
 
 For many tracks we know at least one location - the starting point at the deployment site. We can set this location and the sampler in the MCMC simulation will be instructed to keep these locations fixed. In this case we also know that the bird flew back to the same location, and that the geolocator was still measuring light when this happened, then we can also fix the last couple of twilight times. Theoretically, if a bird was observed during the year, any twiligth time can be fixed to the location that is known.
 
@@ -202,7 +256,7 @@ z0 <- trackMidpts(x0) # we need to update the z0 locations
 ```
 
 
-## Land mask
+### Land mask
 
 A land mask can be quite simple, e.g. differences in the probability of occurance between land and ocean, or highly complex, e.g. including elevation and temperature etc. Here we use a simple land-sea mask that can be created using the function `earthseaMask` below. This is something that can be customised for purpose, but for the time being we assume that bee eaters are more likely to pend time flying on land than at sea.
 
@@ -249,9 +303,9 @@ log.prior <- function(p) {
 ```
 
 
-## The Estelle Model
+### The Estelle Model
 
-Now, we are ready to specify a model for the analysis. Below we specify a few key parameters.    
+Now, we are ready to specify a model (we only use the Estelle) for the analysis. Below we specify a few key parameters.    
 
 1. `twilight` =  twilight times that we determined above.    
 1. `rise` = a logical vector sunrise = TRUE - this is calculated at the same time when you define twilights.    
@@ -283,20 +337,20 @@ model <- thresholdModel(twilight = twl$Twilight,
 
 We also need to define the error distribution around each location. We set that using a multivariate normal distribution. Then we can fit the model:
 
-```{r, warning=FALSE, message=FALSE}
+```{r, eval=FALSE}
 proposal.x <- mvnorm(S=diag(c(0.0025,0.0025)),n=nlocation(x0))
 proposal.z <- mvnorm(S=diag(c(0.0025,0.0025)),n=nlocation(z0))
 
 fit <- estelleMetropolis(model, proposal.x, proposal.z, iters = 1000, thin = 20)
 ```
 
-## Tuning the proposals
+### Tuning the proposals
 
 Once the chain meets the positivity constraint, the next step is to tune the proposal distributions.
 The model and proposals are redefined using the last set of locations from the previous run to initialize. 
 
 
-```{r, warning=FALSE, message=FALSE}
+```{r, eval=FALSE}
 x0 <- chainLast(fit$x)
 z0 <- chainLast(fit$z)
 
@@ -318,31 +372,35 @@ z.proposal <- mvnorm(S = diag(c(0.005, 0.005)), n = nrow(twl) - 1)
 A number of short runs are conducted to tune the proposals. At the end of each run, new proposal distributions are defined based on the dispersion observed in the previous run.
 
 
-```{r, warning=FALSE, message=FALSE}
-fit <- estelleMetropolis(model, x.proposal, z.proposal, iters = 300, thin = 20)
+```{r, eval = FALSE}
 for (k in 1:3) {
-    x.proposal <- mvnorm(chainCov(fit$x), s = 0.2)
-    z.proposal <- mvnorm(chainCov(fit$z), s = 0.2)
-    
     fit <- estelleMetropolis(model, x.proposal, z.proposal, x0 = chainLast(fit$x), 
         z0 = chainLast(fit$z), iters = 300, thin = 20)
+    
+    x.proposal <- mvnorm(chainCov(fit$x), s = 0.2)
+    z.proposal <- mvnorm(chainCov(fit$z), s = 0.2)
 }
 ```
 
 The samples drawn through this process need to be examined to ensure the chain mixes adequately
 
-```{r, fig.width=6, fig.height=9}
+```{r, eval = FALSE}
 opar <- par(mfrow = c(2, 1), mar = c(3, 5, 2, 1) + 0.1)
 matplot(t(fit$x[[1]][!fixedx, 1, ]), type = "l", lty = 1, col = "dodgerblue", ylab = "Lon")
 matplot(t(fit$x[[1]][!fixedx, 2, ]), type = "l", lty = 1, col = "firebrick", ylab = "Lat")
 par(opar)
 ```
 
-## Final run
+```{r fig.align='center', echo=FALSE, fig.width=7}
+knitr::include_graphics('images/SGATmix.png', dpi = NA)
+```
+
+
+### Final run
 
 Once the proposals are tuned, a larger final sample is drawn.
 
-```{r, warning=FALSE, message=FALSE}
+```{r, eval = FALSE}
 x.proposal <- mvnorm(chainCov(fit$x), s = 0.25)
 z.proposal <- mvnorm(chainCov(fit$z), s = 0.25)
 
@@ -350,7 +408,12 @@ fit <- estelleMetropolis(model, x.proposal, z.proposal, x0 = chainLast(fit$x),
                          z0 = chainLast(fit$z), iters = 1000, thin = 20)
 ```
 
-## Summarize the results
+```{r, echo = FALSE}
+load(paste0(wd, "/Results/", Species, "/", ID, "_SGATfit.RData"))
+```
+
+
+### Summarize the results
 
 `locationSummary` provides the median tracks and percentiles based on the MCMC Chains from the final run.
 
@@ -360,7 +423,7 @@ head(sm)
 ```
 
 
-## Plotting the results
+### Plotting the results
 
 The results can be presented in many ways, here`s just a quick one.
 
@@ -394,13 +457,13 @@ polygon(x=c(sm$Time1,rev(sm$Time1)), y=c(sm$`Lat.2.5%`,rev(sm$`Lat.97.5%`)), bor
 lines(sm$Time1,sm$"Lat.50%", lwd = 2)
 ```
 
-## Saving the Results
+### Saving the Results
 
 <span style="color:darkred">**IMPORTANT**</span>
 
 <span style="color:darkred">We want to save the summary file as well as the MCMC chains in case we want to summarize them differently in the future. We also need the chains to make maps with a density distribution or similar presentations of the resutls.</span>
 
-```{r}
+```{r, eval = FALSE}
 write.csv(sm, 
           paste0(wd, "/Results/", Species, "/", ID, "_SGATSummary.csv"), 
           row.names = F)
@@ -411,7 +474,7 @@ save(fit,
 ```
 
 
-## The Groupe Model
+### The Groupe Model
 
 The group model is a special case of the estelle model discussed above. It allows group twilight times together which are then treated as a set of twiligth times recorded at one single location. The location is thus the best spatial representation of a group of sunrise and sunset times.
 
@@ -464,7 +527,7 @@ sitenum <- cumsum(stationary==T)
 sitenum[stationary==F] <- 0
 ```
 
-## Initiate the model
+### Initiate the model
 
 The initial path as well as the fixed vector needs to be slightly different, e.g. only one value for a group of twiligths.
 
@@ -493,7 +556,7 @@ matplot(0:100, dgamma(0:100, beta[1], beta[2]),
 ```
 
 
-## Land mask for group model
+### Land mask for group model
 
 
 Now that we know when birds are stationary and when they are not, we We can change the mask to ensure that when birds are stationary, they are on land, and that when they are moving/migrating, they can go anywhere. We can therefore create two rasters, one for movement and one for stationary periods which we can then access using an index derived from `stationary`.
@@ -524,12 +587,11 @@ earthseaMask <- function(xlim, ylim, n = 2, pacific=FALSE, index) {
 
   function(p) mask[cbind(.bincode(p[,2],ybin),.bincode(p[,1],xbin), index)]
 }
-
 ```
 
 We can then create the mask in a similar manner to before, but now with an index which we derine from `stationary`
 
-```{r}
+```{r, warnings = FALSE}
 xlim <- range(x0[,1]+c(-5,5))
 ylim <- range(x0[,2]+c(-5,5))
 
@@ -549,11 +611,11 @@ logp <- function(p) {
 ```
 
 
-## The Estelle Model
+### The Estelle Model
 
 Now we can define the model (again a relaxed model first).
 
-```{r, warning=FALSE, message=FALSE}
+```{r, eval=FALSE}
 model <- groupedThresholdModel(twl$Twilight,
                                twl$Rise,
                                group = twl$group, #This is the group vector for each time the bird was at a point
@@ -575,9 +637,9 @@ z.proposal <- mvnorm(S = diag(c(0.005, 0.005)), n = nrow(z0))
 fit <- estelleMetropolis(model, x.proposal, z.proposal, iters = 1000, thin = 20)
 ```
 
-## Tuning
+### Tuning
 
-```{r, warning=FALSE, message=FALSE}
+```{r, eval=FALSE}
 # use output from last run
 x0 <- chainLast(fit$x)
 z0 <- chainLast(fit$z)
@@ -608,9 +670,14 @@ matplot(t(fit$x[[1]][!fixedx, 2, ]), type = "l", lty = 1, col = "firebrick", yla
 par(opar)
 ```
 
-## Final run
+```{r fig.align='center', echo=FALSE, fig.width=7}
+knitr::include_graphics('images/SGATmix2.png', dpi = NA)
+```
 
-```{r, warning=FALSE, message=FALSE}
+
+### Final run
+
+```{r, eval=FALSE}
 x.proposal <- mvnorm(chainCov(fit$x), s = 0.3)
 z.proposal <- mvnorm(chainCov(fit$z), s = 0.3)
 
@@ -618,15 +685,20 @@ fit <- estelleMetropolis(model, x.proposal, z.proposal, x0 = chainLast(fit$x),
                          z0 = chainLast(fit$z), iters = 2000, thin = 20, chain = 1)
 ```
 
+```{r, echo = FALSE}
+load(paste0(wd, "/Results/", Species, "/", ID, "_SGATGroupfit.RData"))
+```
 
-## Summarize the results
+
+
+### Summarize the results
 
 ```{r}
 sm <- locationSummary(fit$z, time=fit$model$time)
 ```
 
 
-## Mapping the results
+### Mapping the results
 
 
 ```{r, fig.width=6.5, fig.height=12}
@@ -654,17 +726,13 @@ points(sm[,"Lon.50%"], sm[,"Lat.50%"], pch=as.character(sitenum),
 ```
 
 
-## Saving the Results
+### Saving the Results
 
 <span style="color:darkred">**IMPORTANT**</span>
 
-<span style="color:darkred">We again want to save the summary file as well as the MCMC Chains in case we want to summarize them differently in the future. We also need the chains to make maps with a density distribution or similar presentations of the resutls.</span>
+<span style="color:darkred">We again want to save the summary file as well as the MCMC Chains in case we want to summarize them differently in the future. We also need the chains to make maps with a density distribution or similar presentations of the results.</span>
 
-<span style="color:darkred">**BUT** We have to provide a new project name (`AnalCode`) to not overwrite the results from above!</span>
-
-```{r}
-AnalCode <- "GrMod"
-
+```{r, eval = FALSE}
 write.csv(sm, 
           paste0(wd, "/Results/", Species, "/", ID, "_SGATGroupSummary.csv"), 
           row.names = F)

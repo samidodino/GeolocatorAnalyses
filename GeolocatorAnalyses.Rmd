@@ -46,3 +46,9 @@ knitr::include_graphics('images/Ackn.jpg', dpi = NA)
 
 ```{r child = '04-TwilightAnnotation.Rmd'}
 ```
+
+```{r child = '05-GeoLight.Rmd'}
+``` 
+
+```{r child = '07-SGAT.Rmd'}
+```
