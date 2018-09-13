@@ -1,8 +1,3 @@
----
-output: html_document
-editor_options: 
-  chunk_output_type: console
----
 # SGAT {#SGAT}
 
 ## Model description
@@ -66,10 +61,12 @@ To illustrate the _SGAT_ analysis, we use the European bee-eater dataset. The li
 
 We first define the metadata and read in the raw recordings. We skip the twilight definition process but read in the twiligth file that has been generated using `preprocessLight`. Note: it is required to retransform the Twilight column into the `POSIXc`format.
 
-```{r, warning=FALSE, message=FALSE}
+```{r, echo = FALSE}
 library(GeoLocTools)
 setupGeolocation()
+```
 
+```{r, warning=FALSE, message=FALSE}
 ID <- "14SA"
 wd <- "Data"
 Species <- "MerApi"

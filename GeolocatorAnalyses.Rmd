@@ -17,7 +17,7 @@ knitr::include_graphics('images/front.png', dpi = NA)
 
 This manual is part of the following publication and has been written by the same group of authors:
 
-**Simeon Lisovski, Martins Briedis, Kiran Danjahl-Adams, Lykke Pedersen, Sarah Davidson, ..., Benjamin Merkel, Michael T. Hallworth, Michael Sumner, Simon Wotherspoon, Eli Bridge (201X) The Nuts and Bolts of Light-Level Geolocation Analyses. Journal X:xxx-xxx.**
+**Simeon Lisovski, Martins Briedis, Kiran Danjahl-Adams, Lykke Pedersen, Sarah Davidson, Julia, Karagicheva..., Benjamin Merkel, Michael T. Hallworth, Eldar Rakhimberdiev, Michael Sumner, Simon Wotherspoon, Eli Bridge (201X) The Nuts and Bolts of Light-Level Geolocation Analyses. Journal X:xxx-xxx.**
 
 
 # Preface
@@ -51,4 +51,10 @@ knitr::include_graphics('images/Ackn.jpg', dpi = NA)
 ``` 
 
 ```{r child = '07-SGAT.Rmd'}
+```
+
+```{r child = '08-FLightR.Rmd'}
+```
+
+```{r child = '10-References.Rmd'}
 ```
